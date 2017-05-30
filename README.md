@@ -23,6 +23,7 @@ Once this is done, open *main.jl* and under the section highlighted as CHANGE HE
 * *useIncumbent*: if true, provide the upper bound as incumbent to the solver (default true)
 * *PreProcessingOn*: if true, adds constraints to set some variables to zeros (default true)
 * *printSolution*: if true, can set the sequence of relocations for each instance (default false)
+
 After setting these parameters, run in the directory
 ```
 julia main.jl
@@ -33,6 +34,7 @@ julia main.jl
 **After running the previous step for all 21 class ONLY**, the script generateTables.jl allows to generate all 6 tables presented in *A new binary integer program for the restricted container relocation problem, Galle et al. (2017)*. In order to do so, open the script and set the following parameters:
 * *outputFolder*: the name of the output folder where the results of the previous step are (default Results/)
 * *generate_Table_i* for i = 1,...,6: if true, regenerate Table i in a csv file in outputFolder (default true)
+
 After setting these parameters, run in the directory
 ```
 julia generateTables.jl
