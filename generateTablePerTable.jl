@@ -13,9 +13,9 @@ function generateTable_1(outputFolder)
         inputData = readtable(file,header=true,nrows = 1);
         df[:Class][cla] = string("(",listOfClasses[cla,1],",",listOfClasses[cla,2],")");
         df[:Num_Containers][cla] = listOfClasses[cla,1]*listOfClasses[cla,2];
-        df[:Average_Lower_Bound][cla] = inputData[:Lower_Bound][1];
-        df[:Average_Upper_Bound][cla] = inputData[:Upper_Bound][1];
-        df[:Average_Gap][cla] = inputData[:Gap][1];
+        df[:Average_Lower_Bound][cla] = round(inputData[:Lower_Bound][1],3);
+        df[:Average_Upper_Bound][cla] = round(inputData[:Upper_Bound][1],3);
+        df[:Average_Gap][cla] = round(inputData[:Gap][1],3);
         df[:Num_Trivial][cla] = inputData[:Trivial_Instance][1];
     end
     outputFileName = string(outputFolder,"Table_1.csv");
@@ -149,7 +149,7 @@ function generateTable_5(outputFolder)
             counter += 1;
         end
         df[:Instance][6*cla] = string("Avg");
-        df[:Optimal_Value][6*cla] = optAvg;
+        df[:Optimal_Value][6*cla] = round(optAvg,1);
         if nSolved == 0
             df[:time_CRPI][6*cla] = string('*');
         else
@@ -193,7 +193,7 @@ function generateTable_6(outputFolder)
             counter += 1;
         end
         df[:Instance][6*cla] = string("Avg");
-        df[:Optimal_Value][6*cla] = optAvg;
+        df[:Optimal_Value][6*cla] = round(optAvg,1);
         if nSolved == 0
             df[:time_CRPI][6*cla] = string('*');
         else
