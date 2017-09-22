@@ -22,7 +22,7 @@ function subRoutine(outputFolder, T_2, S, limitOfTime, memoryLimit, useGap, useI
 ## Solving_Time: the time it took Gurobi to solve the binary IP
 ## Nodes_Iterations: the number of nodes iterations made by Gurobi to solve the IP
 ## UB_Opt: true if the upper bound is optimal
-    df = DataFrame(Instance = ["Average";collect(1:nInstances)], Blocking = Vector{Float64}(nInstances+1), Lower_Bound = Vector{Float64}(nInstances+1), Upper_Bound = Vector{Float64}(nInstances+1), Gap = Vector{Float64}(nInstances+1), Trivial_Instance = Vector{Any}(nInstances+1), Opt_Solved = Vector{Any}(nInstances+1), Timed_Out = Vector{Any}(nInstances+1), Memory_Out = Vector{Any}(nInstances+1), Opt_Value = Vector{Float64}(nInstances+1), Num_Variables = Vector{Float64}(nInstances+1), Num_Constraints = Vector{Float64}(nInstances+1), Solving_Time = Vector{Float64}(nInstances+1), Nodes_Iterations = Vector{Float64}(nInstances+1), UB_Opt = Vector{Any}(nInstances+1));
+    df = DataFrame(Instance = ["Average";collect(1:nInstances)], Blocking = Vector{Float64}(nInstances+1), Lower_Bound = Vector{Float64}(nInstances+1), Upper_Bound = Vector{Float64}(nInstances+1), Gap = Vector{Float64}(nInstances+1), Trivial_Instance = Vector{Any}(nInstances+1), Opt_Solved = Vector{Any}(nInstances+1), Timed_Out = Vector{Any}(nInstances+1), Memory_Out = Vector{Any}(nInstances+1), Opt_Value = Vector{Float64}(nInstances+1), Num_Variables = Vector{Float64}(nInstances+1), Num_Constraints = Vector{Float64}(nInstances+1), Solving_Time = Vector{Float64}(nInstances+1), Nodes_Iterations = Vector{Float64}(nInstances+1), UB_Opt = Vector{Any}(nInstances+1), LP_Relax = Vector{Any}(nInstances+1), LP_Diff_Blocking = Vector{Any}(nInstances+1), LP_Diff_LB = Vector{Any}(nInstances+1));
 ## Declare the first line (the average of each attribute) and initialize it to 0
     df[1, filter(x -> x != :Instance, names(df))] = 0;
 ## Define the number of tiers
@@ -51,10 +51,20 @@ function subRoutine(outputFolder, T_2, S, limitOfTime, memoryLimit, useGap, useI
         df[:Trivial_Instance][1] = df[:Trivial_Instance][1] + df[:Trivial_Instance][instanceID+1];
 ## If this instance is not trivial
         if !df[:Trivial_Instance][instanceID+1]
-## Create the binary encoding for the binary integer program
+## Create the binary encoding for the linear and binary integer programs
             binaryEncoding = binaryEncodingFunction(Config,T,S,C);
 ## Solve the integer program
             (df[:Opt_Solved][instanceID+1], df[:Timed_Out][instanceID+1], df[:Memory_Out][instanceID+1], df[:Opt_Value][instanceID+1], df[:Num_Variables][instanceID+1], df[:Num_Constraints][instanceID+1], df[:Solving_Time][instanceID+1], df[:Nodes_Iterations][instanceID+1]) = binaryIPSolver(binaryEncoding,T,S,C,limitOfTime,memoryLimit,useGap,PreProcessingOn,printSolution,useIncumbent);
+## Solve the linear Program relaxation if the number of variables is not out of memory
+            if !df[:Memory_Out][instanceID+1]
+                df[:LP_Relax][instanceID+1] = LPSolver(binaryEncoding,T,S,C,limitOfTime,PreProcessingOn,useIncumbent);
+                df[:LP_Diff_Blocking][instanceID+1] = df[:LP_Relax][instanceID+1] - df[:Blocking][instanceID+1];
+                df[:LP_Diff_LB][instanceID+1] = df[:LP_Relax][instanceID+1] - df[:Lower_Bound][instanceID+1];
+            else
+                df[:LP_Relax][instanceID+1] = NA;
+                df[:LP_Diff_Blocking][instanceID+1] = NA;
+                df[:LP_Diff_LB][instanceID+1] = NA;
+            end
 ## Count if the instance was solved optimally, if it timed out or went out of memory (product of number of variables and constraints greater than memory Limit) and the number of variables and contraints
             df[:Opt_Solved][1] = df[:Opt_Solved][1] + df[:Opt_Solved][instanceID+1];
             df[:Timed_Out][1] = df[:Timed_Out][1]+ df[:Timed_Out][instanceID+1];
@@ -68,6 +78,9 @@ function subRoutine(outputFolder, T_2, S, limitOfTime, memoryLimit, useGap, useI
                 df[:Nodes_Iterations][1] = df[:Nodes_Iterations][1] + df[:Nodes_Iterations][instanceID+1];
                 df[:UB_Opt][instanceID+1] = (df[:Opt_Value][instanceID+1] == df[:Upper_Bound][instanceID+1]);
                 df[:UB_Opt][1] = df[:UB_Opt][1] + df[:UB_Opt][instanceID+1];
+                df[:LP_Relax][1] = df[:LP_Relax][1] + df[:LP_Relax][instanceID+1];
+                df[:LP_Diff_Blocking][1] = df[:LP_Diff_Blocking][1] + df[:LP_Diff_Blocking][instanceID+1];
+                df[:LP_Diff_LB][1] = df[:LP_Diff_LB][1] + df[:LP_Diff_LB][instanceID+1];
 ## If the instance was not solved optimally, we do not compute averages and we cannot determine if the upper bound was optimal (hence left as false by default)
             else
                 df[:UB_Opt][instanceID+1] = false;
@@ -85,6 +98,9 @@ function subRoutine(outputFolder, T_2, S, limitOfTime, memoryLimit, useGap, useI
             df[:Nodes_Iterations][instanceID+1] = NA;
             df[:UB_Opt][instanceID+1] = true;
             df[:UB_Opt][1] = df[:UB_Opt][1] + 1;
+            df[:LP_Relax][instanceID+1] = NA;
+            df[:LP_Diff_Blocking][instanceID+1] = NA;
+            df[:LP_Diff_LB][instanceID+1] = NA;
         end
     end
 ## When done with all the isntances in the class, compute the average optimal value over all the instances trivial and solved optimally (if there are some)
@@ -100,9 +116,15 @@ function subRoutine(outputFolder, T_2, S, limitOfTime, memoryLimit, useGap, useI
     if df[:Opt_Solved][1] > 0
         df[:Solving_Time][1] = df[:Solving_Time][1]/df[:Opt_Solved][1];
         df[:Nodes_Iterations][1] = df[:Nodes_Iterations][1]/df[:Opt_Solved][1];
+        df[:LP_Relax][1] = df[:LP_Relax][1]/df[:Opt_Solved][1];
+        df[:LP_Diff_Blocking][1] = df[:LP_Diff_Blocking][1]/df[:Opt_Solved][1];
+        df[:LP_Diff_LB][1] = df[:LP_Diff_LB][1]/df[:Opt_Solved][1];
     else
         df[:Solving_Time][1] = NA;
         df[:Nodes_Iterations][1] = NA;
+        df[:LP_Relax][1] = NA;
+        df[:LP_Diff_Blocking][1] = NA;
+        df[:LP_Diff_LB][1] = NA;
     end
 ## The name of the output file if T_2-S_Results.csv and is placed in the output folder. It is a csv file with headers.
     outputFileName = string(outputFolder,T_2, "-", S,"_Results.csv");

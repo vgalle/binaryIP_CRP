@@ -28,8 +28,10 @@ function generateTable_2(outputFolder)
                      5 4;5 5;5 6;5 7;5 8;5 9;5 10;
                      6 6;6 10;10 6;10 10];
     nClasses = size(listOfClasses)[1];
-    df = DataFrame(Class = Vector{AbstractString}(nClasses), Num_Trivial = Vector{Int64}(nClasses), Num_Solved_Non_Trivial = Vector{AbstractString}(nClasses), Average_CPU_Time = Vector{Float64}(nClasses), Standard_Deviation_CPU_Time = Vector{Float64}(nClasses), Num_Time_Limit = Vector{AbstractString}(nClasses), Num_Memory_Limit = Vector{AbstractString}(nClasses));
+    df = DataFrame(Class = Vector{AbstractString}(nClasses), Num_Trivial = Vector{Int64}(nClasses), Num_Solved_Non_Trivial = Vector{AbstractString}(nClasses), Average_CPU_Time = Vector{AbstractString}(nClasses), Standard_Deviation_CPU_Time = Vector{AbstractString}(nClasses), Num_Time_Limit = Vector{AbstractString}(nClasses), Num_Memory_Limit = Vector{AbstractString}(nClasses));
     Num_Non_Trivial_Zehendneretal = [13;14;12;4;7;8;32;29;29;31;36;38;31;19;5;2;0;7;0;0;0];
+    Avg_CPU_Zehendneretal = [0.1;0.3;0.8;4.2;5.8;11.2;1.2;5.8;16.1;90.1;19.9;369.3;524.3;487.7;749.4;126.1;NaN;1466.5;NaN;NaN;NaN];
+    Std_CPU_Zehendneretal = [0.0;0.3;0.7;3.0;3.4;6.0;0.7;3.7;28.3;197.8;38.3;798.9;719.4;609.8;535.0;79.5;NaN;1092.9;NaN;NaN;NaN];
     Num_Time_Out_Zehendneretal = [0;0;0;0;0;0;0;0;0;0;0;1;6;2;0;0;0;10;0;0;0];
     Num_Memory_Out_Zehendneretal = [0;0;0;0;0;0;0;0;0;0;0;0;0;14;31;35;38;23;38;40;40];
     for cla = 1:nClasses
@@ -39,13 +41,13 @@ function generateTable_2(outputFolder)
         df[:Num_Trivial][cla] = parse(Int64,inputData[:Trivial_Instance][1]);
         df[:Num_Solved_Non_Trivial][cla] = string(parse(Int64,inputData[:Opt_Solved][1])," (",Num_Non_Trivial_Zehendneretal[cla],")");
         if parse(Int64,inputData[:Opt_Solved][1]) > 0
-            df[:Average_CPU_Time][cla] = round(inputData[:Solving_Time][1],1);
-            solvingTimesNoNA = inputData[!isna(inputData[:Solving_Time]),:Solving_Time];
+            df[:Average_CPU_Time][cla] = string(round(inputData[:Solving_Time][1],1)," (",Avg_CPU_Zehendneretal[cla],")");
+            solvingTimesNoNA = inputData[.!(isna.(inputData[:Solving_Time])),:Solving_Time];
             solvingTimesNoNA = solvingTimesNoNA[2:length(solvingTimesNoNA)];
-            df[:Standard_Deviation_CPU_Time][cla] = round(std(solvingTimesNoNA),1);
+            df[:Standard_Deviation_CPU_Time][cla] = string(round(std(solvingTimesNoNA),1)," (",Std_CPU_Zehendneretal[cla],")");
         else
-            df[:Average_CPU_Time][cla] = NA;
-            df[:Standard_Deviation_CPU_Time][cla] = NA;
+            df[:Average_CPU_Time][cla] = string("n.a. (",Avg_CPU_Zehendneretal[cla],")");
+            df[:Standard_Deviation_CPU_Time][cla] = string("n.a. (",Std_CPU_Zehendneretal[cla],")");
         end
         df[:Num_Time_Limit][cla] = string(parse(Int64,inputData[:Timed_Out][1])," (",Num_Time_Out_Zehendneretal[cla],")");
         df[:Num_Memory_Limit][cla] = string(parse(Int64,inputData[:Memory_Out][1])," (",Num_Memory_Out_Zehendneretal[cla],")");
@@ -60,7 +62,7 @@ function generateTable_3(outputFolder)
                      5 4;5 5;5 6;5 7;5 8;5 9;5 10;
                      6 6;6 10;10 6;10 10];
     nClasses = size(listOfClasses)[1];
-    df = DataFrame(Class = Vector{AbstractString}(nClasses), Average_Num_Binary_Variables = Vector{AbstractString}(nClasses), Average_Num_Constraints = Vector{Float64}(nClasses), Average_Nodes_Iterations = Vector{Float64}(nClasses));
+    df = DataFrame(Class = Vector{AbstractString}(nClasses), Average_Num_Binary_Variables = Vector{AbstractString}(nClasses), Average_Num_Constraints = Vector{Float64}(nClasses), Average_Nodes_Iterations = Vector{Float64}(nClasses), Average_Diff_Blocking = Vector{Any}(nClasses), Average_Diff_LB = Vector{Any}(nClasses));
     Average_Num_Binary_Variables_Zehendneretal = [546.8;2140.1;5236.0;16170.8;25576.0;37248.0;5755.5;19380.2;32718.8;72055.6;15161.6;42530.7;112706.7;198902.1;352122.7;583790.6;884834.6;243620.9;2058673.2;Inf;Inf];
     for cla = 1:nClasses
         file = string(outputFolder,listOfClasses[cla,1], "-", listOfClasses[cla,2],"_Results.csv");
@@ -73,6 +75,8 @@ function generateTable_3(outputFolder)
         end
         df[:Average_Num_Constraints][cla] = round(inputData[:Num_Constraints][1],1);
         df[:Average_Nodes_Iterations][cla] = round(inputData[:Nodes_Iterations][1],1);
+        df[:Average_Diff_Blocking][cla] = inputData[:LP_Diff_Blocking][1];
+        df[:Average_Diff_LB][cla] = inputData[:LP_Diff_LB][1];
     end
     outputFileName = string(outputFolder,"Table_3.csv");
     writetable(outputFileName, df, separator = ',', header = true);
@@ -120,10 +124,11 @@ function generateTable_5(outputFolder)
                      4 4;4 5;4 6];
     nClasses = size(listOfClasses)[1];
     df = DataFrame(Class = Vector{AbstractString}(6*nClasses), Instance = Vector{AbstractString}(6*nClasses), Optimal_Value = Vector{Float64}(6*nClasses),
-    time_CRPI = Vector{AbstractString}(6*nClasses), time_BRPIIstar = Vector{AbstractString}(6*nClasses), time_BandB = Vector{AbstractString}(6*nClasses), time_BRP2ci = Vector{AbstractString}(6*nClasses));
+    time_CRPI = Vector{AbstractString}(6*nClasses), time_BRPIIstar = Vector{AbstractString}(6*nClasses), time_BandB = Vector{AbstractString}(6*nClasses), time_BRP2ci = Vector{AbstractString}(6*nClasses), time_Abstra = Vector{AbstractString}(6*nClasses));
     time_BRPIIstar_input = [1.18;1.39;1.00;1.09;1.06;3.6;4.76;18.39;11.71;16.06;18.04;13.79;83.09;75.95;100.71;95.31;65.32;84.11;124.11;113.29;89.06;93.12;96.50;103.22;182.14;;284.29;119.20;472.32;277.97;267.26;84.66;14403.33;8298.85;250.33;6384.65;5884.36;71.96;228.91;71.99;65.25;89.36;105.49;3544.86;326.54;1023.98;119.86;2656.67;1534.38;4077.08;18985.03;1706.75;2376.86;8564.20;7141.98];
     time_BandB_input = [0.007;0.007;0.006;0.007;0.007;0.007;0.008;0.007;0.006;0.007;0.007;0.008;0.010;0.007;0.013;0.008;0.026;0.013;0.086;0.008;0.019;0.016;0.007;0.027;0.009;0.011;0.011;0.010;0.038;0.016;0.021;0.055;0.012;0.013;0.022;0.025;0.017;0.025;0.009;0.008;0.013;0.014;0.540;0.043;0.018;0.014;0.579;0.239;17.476;0.030;0.069;0.315;0.076;3.593];
     time_BRP2ci_input = [0.11;0.11;0.08;0.09;0.06;0.09;0.28;0.22;0.34;0.26;0.27;0.274;0.72;1.2;0.91;0.8;1.59;1.044;5.35;1.59;3.09;1.78;1.23;2.608;2.89;3.29;3.34;3.35;7.97;4.168;7.25;9.31;6.57;11.03;11.06;9.044;1.25;0.95;1.56;0.78;1.15;1.138;61.62;5.27;8.28;2.96;81.26;31.878;Inf;5.23;12.86;23.4;45.22;Inf];
+    time_Abstra_input = [NaN;NaN;NaN;NaN;NaN;NaN;NaN;NaN;NaN;NaN;NaN;NaN;NaN;NaN;NaN;NaN;NaN;NaN;5.26;0;2.01;0.03;0;1.46;0.08;0.6;1.98;0.3;191.6;38.91;0.75;8.65;0.66;7.24;13.53;6.166;0.08;0;0.03;0;0.04;0.03;21.08;0.15;2.6;0.02;93.4;23.45;64.73;0.02;31.9;59.53;107.15;31.24];
     counter = 1;
     for cla = 1:nClasses
         file = string(outputFolder,listOfClasses[cla,1], "-", listOfClasses[cla,2],"_Results.csv");
@@ -146,6 +151,7 @@ function generateTable_5(outputFolder)
             df[:time_BRPIIstar][6*(cla-1)+i] = string(time_BRPIIstar_input[counter]);
             df[:time_BandB][6*(cla-1)+i] = string(time_BandB_input[counter]);
             df[:time_BRP2ci][6*(cla-1)+i] = string(time_BRP2ci_input[counter]);
+            df[:time_Abstra][6*(cla-1)+i] = string(time_Abstra_input[counter]);
             counter += 1;
         end
         df[:Instance][6*cla] = string("Avg");
@@ -158,6 +164,7 @@ function generateTable_5(outputFolder)
         df[:time_BRPIIstar][6*cla] = string(time_BRPIIstar_input[counter]);
         df[:time_BandB][6*cla] = string(time_BandB_input[counter]);
         df[:time_BRP2ci][6*cla] = string(time_BRP2ci_input[counter]);
+        df[:time_Abstra][6*cla] = string(time_Abstra_input[counter]);
         counter += 1;
     end
     outputFileName = string(outputFolder,"Table_5.csv");

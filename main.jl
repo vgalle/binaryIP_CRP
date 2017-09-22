@@ -45,6 +45,7 @@ include("reverseBinaryEncoding.jl"); ## function to reverse previous operator
 include("firstMoveFunction.jl"); ## function to compute the first retrieval where each container is moved
 include("incumbent.jl"); ## function to create incumbent for binary IP using same heuristic as Caserta et al. (2012)
 include("binaryIPSolver.jl"); ## function to solve the binary IP formulation
+include("LPSolver.jl"); ## function to solve the linear relaxation of the binary IP
 ## Load the sub routine function to perform the experiment with the inputs defined above by the user
 include("subRoutine.jl");
 subRoutine(outputFolder, T_2, S, limitOfTime, memoryLimit, useGap, useIncumbent, PreProcessingOn, printSolution);
