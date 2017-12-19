@@ -1,6 +1,6 @@
 # binaryIP_CRP
 
-![DOI(https://zenodo.org/badge/91832914.svg)](https://zenodo.org/badge/latestdoi/91832914)
+[![DOI](https://zenodo.org/badge/91832914.svg)](https://zenodo.org/badge/latestdoi/91832914)
 
 This directory contains the computational results from *A new binary integer program for the restricted container relocation problem, Galle et al. (2017)*. These experiments show the efficiency of the binary integer program CRP-I proposed in this paper. The purpose of this repository is to be able to reproduce the experiments made in this paper, check their truthfulness and potentially use the code in further studies. If you have any question please email [Virgile Galle](vgalle@mit.edu).
 
